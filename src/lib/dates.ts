@@ -40,13 +40,29 @@ export function isWeekday(key: string): boolean {
   return day >= 1 && day <= 5
 }
 
-/** Snap to Mon–Fri: Sat→Mon(+2), Sun→Mon(+1) */
+export function isWeekend(key: string): boolean {
+  return !isWeekday(key)
+}
+
+/**
+ * Snap weekends to nearest training day:
+ * Sat → Fri (previous Combat), Sun → Mon (next Warrior).
+ * Weekdays unchanged.
+ */
 export function snapToWeekday(key: string): string {
   const d = parseDateKey(key)
   const day = d.getDay()
-  if (day === 6) d.setDate(d.getDate() + 2)
-  else if (day === 0) d.setDate(d.getDate() + 1)
+  if (day === 6) d.setDate(d.getDate() - 1) // Sat → Fri
+  else if (day === 0) d.setDate(d.getDate() + 1) // Sun → Mon
   return toDateKey(d)
+}
+
+/** Human note when a weekend tap is remapped to Fri/Mon. */
+export function weekendSnapNote(fromKey: string): string | null {
+  const day = parseDateKey(fromKey).getDay()
+  if (day === 6) return 'Weekend · using Friday Combat'
+  if (day === 0) return 'Weekend · using Monday Warrior'
+  return null
 }
 
 /** Next Mon–Fri after key (exclusive of key if already weekday — advances one weekday) */
@@ -69,12 +85,22 @@ export function formatShort(key: string): string {
   return `${weekdayShort(key)} ${d.getMonth() + 1}/${d.getDate()}`
 }
 
+/** Longer phone-friendly label, e.g. "Friday, Sep 18" */
+export function formatLong(key: string): string {
+  const d = parseDateKey(key)
+  return d.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 /** HITT session type for a Mon–Fri dateKey (weekends snap conceptually unused). */
 export function sessionForDate(dateKey: string): Focus {
   const dow = parseDateKey(dateKey).getDay()
   const session = WEEKDAY_SESSION[dow]
   if (session) return session
-  // Fallback if somehow weekend: treat as next weekday session
+  // Fallback if somehow weekend: treat as snapped weekday session
   return sessionForDate(snapToWeekday(dateKey))
 }
 

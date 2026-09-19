@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { CalendarMonth } from './components/CalendarMonth'
 import { Controls } from './components/Controls'
+import { DateControl } from './components/DateControl'
 import { DayStrip } from './components/DayStrip'
 import { DayView } from './components/DayView'
 import { RollCall } from './components/RollCall'
@@ -25,6 +26,7 @@ export default function App() {
   const [selected, setSelected] = useState(0)
   const [editing, setEditing] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -101,16 +103,16 @@ export default function App() {
     setToast('Advanced to next weekday')
   }
 
-  function onSelectCalendarDate(dateKey: string) {
+  function onSelectCalendarDate(dateKey: string, note?: string | null) {
     const idx = state.days.findIndex((d) => d.dateKey === dateKey)
     if (idx >= 0) {
       setSelected(idx)
-      setToast('Day selected')
+      setToast(note ?? 'Day selected')
       return
     }
     setState((s) => setStartDate(s, dateKey))
     setSelected(0)
-    setToast('Plan window moved')
+    setToast(note ?? 'Plan window moved')
   }
 
   function onSettingsChange(settings: WorkoutSettings) {
@@ -227,23 +229,22 @@ export default function App() {
       </header>
 
       <div className="space-y-4">
-        <RollCall
-          roster={state.roster}
-          statuses={state.statuses}
-          onCycle={cycleStatus}
-          onEdit={() => setEditing(true)}
-        />
-
-        <CalendarMonth
+        <DateControl
           selectedDate={selectedDate}
-          startDate={state.startDate}
-          onSelectDate={onSelectCalendarDate}
+          onPickDate={() => setCalendarOpen(true)}
         />
 
         <DayStrip
           days={state.days}
           selected={selected}
           onSelect={setSelected}
+        />
+
+        <RollCall
+          roster={state.roster}
+          statuses={state.statuses}
+          onCycle={cycleStatus}
+          onEdit={() => setEditing(true)}
         />
 
         <Controls
@@ -264,6 +265,14 @@ export default function App() {
           />
         )}
       </div>
+
+      <CalendarMonth
+        open={calendarOpen}
+        selectedDate={selectedDate}
+        startDate={state.startDate}
+        onSelectDate={onSelectCalendarDate}
+        onClose={() => setCalendarOpen(false)}
+      />
 
       {editing && (
         <RosterEditor

@@ -20,12 +20,13 @@ Open the local Vite URL (usually `http://localhost:5173`) on your phone or deskt
 
 ## Features
 
-- **Roll call** — tap status cycle **P / A / D / L / M**, live present count, edit roster
-- **3-day strip** — Today / Tomorrow / Day+2 (Mon–Fri weekdays)
+- **Date control** — selected date + HITT session badge; big **Pick date** opens a phone-friendly calendar sheet
+- **Month calendar** — large day cells, big month prev/next; Sat→Fri / Sun→Mon with a note; stays in sync with Today / Tomorrow / Day+2
+- **Accountability** — collapsible accordion (collapsed by default); header shows Present count
+- **3-day strip** — Today / Tomorrow / Day+2 (swipe or tap; Mon–Fri weekdays)
 - Each day: **HITT Session** + Block1 warm-up (leader) + Block2 main (**PTNCO Stuart**) + Block3 cool-down (leader)
 - **RANDOMIZE** selected day or all 3 — reshuffles packs **without** changing that day’s session type
 - **Advance** start day (Mon–Fri only)
-- **Month calendar** — Mon–Fri with Warrior / Reload / Athlete / Combat labels; tap to select
 - **Exercise demos** — Demo button → cues + YouTube link (`src/data/demos.ts`)
 - **Settings** — style bias, block timing, volume (Easy / Average / Hard), RPE, equipment toggles; applied on Randomize; Export/Import includes settings
 - Inline edit of reps/time after generate
