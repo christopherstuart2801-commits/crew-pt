@@ -5,6 +5,36 @@ export type Rank = 'Cpl' | 'LCpl' | 'PFC'
 /** Official HITT Mon–Fri session types (UI labels). */
 export type Focus = 'Warrior' | 'Reload' | 'Athlete' | 'Combat'
 
+export type WorkoutStyle = 'hitt' | 'strength' | 'speed' | 'combat'
+
+export type VolumeLevel = 'easy' | 'average' | 'hard'
+
+export interface EquipmentToggles {
+  barbell: boolean
+  ammoCan: boolean
+  sandbag: boolean
+  kettlebell: boolean
+  track: boolean
+}
+
+/** User-tunable workout parameters (persist + export). */
+export interface WorkoutSettings {
+  style: WorkoutStyle
+  /** Block durations (minutes) */
+  block1Min: number
+  block2Min: number
+  block3Min: number
+  /** Circuit work:rest (seconds) */
+  workSec: number
+  restSec: number
+  volume: VolumeLevel
+  /** Default rest between sets (seconds) */
+  restDefaultSec: number
+  /** Target RPE 6–8 */
+  rpeTarget: number
+  equipment: EquipmentToggles
+}
+
 export interface Marine {
   id: string
   rank: Rank
@@ -22,6 +52,7 @@ export interface WarmupBlock {
   locomotion: ExerciseItem[]
   sprintPrep: ExerciseItem[]
   leaderId: string | null
+  durationMin?: number
 }
 
 export interface MainBlock {
@@ -29,17 +60,22 @@ export interface MainBlock {
   /** Short UI badge, e.g. "Agility" */
   badge?: string
   items: ExerciseItem[]
-  leaderId: string // always Stuart (PTNCO)
+  leaderId: string
+  durationMin?: number
+  workSec?: number
+  restSec?: number
+  rpeTarget?: number
 }
 
 export interface CooldownBlock {
   items: ExerciseItem[]
   leaderId: string | null
+  durationMin?: number
 }
 
 export interface DayPlan {
-  dateKey: string // YYYY-MM-DD
-  label: string // Today / Tomorrow / Day+2 or weekday
+  dateKey: string
+  label: string
   focus: Focus
   block1: WarmupBlock
   block2: MainBlock
@@ -47,9 +83,10 @@ export interface DayPlan {
 }
 
 export interface AppState {
-  version: 2
+  version: 3
   roster: Marine[]
   statuses: Record<string, Status>
-  startDate: string // YYYY-MM-DD Mon–Fri start
+  startDate: string
   days: DayPlan[]
+  settings: WorkoutSettings
 }

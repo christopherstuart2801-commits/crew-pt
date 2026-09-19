@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { CalendarMonth } from './components/CalendarMonth'
 import { Controls } from './components/Controls'
 import { DayStrip } from './components/DayStrip'
 import { DayView } from './components/DayView'
 import { RollCall } from './components/RollCall'
 import { RosterEditor } from './components/RosterEditor'
+import { SettingsPanel } from './components/SettingsPanel'
 import { STATUS_CYCLE } from './data/roster'
 import {
   advanceStart,
@@ -11,14 +13,18 @@ import {
   importJson,
   loadState,
   saveState,
+  setStartDate,
 } from './lib/storage'
 import { randomizeDay, randomizeThreeDays } from './lib/randomize'
-import type { AppState, Marine, Status } from './types'
+import type { AppState, Marine, Status, WorkoutSettings } from './types'
+
+type BlockKey = 'opener' | 'locomotion' | 'sprintPrep' | 'main' | 'cooldown'
 
 export default function App() {
   const [state, setState] = useState<AppState>(() => loadState())
   const [selected, setSelected] = useState(0)
   const [editing, setEditing] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -68,6 +74,7 @@ export default function App() {
         labels[i]!,
         s.roster,
         s.statuses,
+        s.settings,
       )
       const days = s.days.map((d, j) => (j === i ? day : d))
       return { ...s, days }
@@ -78,7 +85,12 @@ export default function App() {
   function randomizeAll() {
     setState((s) => ({
       ...s,
-      days: randomizeThreeDays(s.startDate, s.roster, s.statuses),
+      days: randomizeThreeDays(
+        s.startDate,
+        s.roster,
+        s.statuses,
+        s.settings,
+      ),
     }))
     setToast('All 3 days randomized')
   }
@@ -87,6 +99,74 @@ export default function App() {
     setState((s) => advanceStart(s))
     setSelected(0)
     setToast('Advanced to next weekday')
+  }
+
+  function onSelectCalendarDate(dateKey: string) {
+    const idx = state.days.findIndex((d) => d.dateKey === dateKey)
+    if (idx >= 0) {
+      setSelected(idx)
+      setToast('Day selected')
+      return
+    }
+    setState((s) => setStartDate(s, dateKey))
+    setSelected(0)
+    setToast('Plan window moved')
+  }
+
+  function onSettingsChange(settings: WorkoutSettings) {
+    setState((s) => ({ ...s, settings }))
+  }
+
+  function onSettingsApplyRegenerate() {
+    setState((s) => ({
+      ...s,
+      days: randomizeThreeDays(
+        s.startDate,
+        s.roster,
+        s.statuses,
+        s.settings,
+      ),
+    }))
+    setSelected(0)
+    setSettingsOpen(false)
+    setToast('Settings applied · days re-rolled')
+  }
+
+  function onUpdateDetail(block: BlockKey, index: number, detail: string) {
+    setState((s) => {
+      const days = s.days.map((d, di) => {
+        if (di !== selected) return d
+        if (block === 'opener') {
+          const opener = d.block1.opener.map((e, i) =>
+            i === index ? { ...e, detail } : e,
+          )
+          return { ...d, block1: { ...d.block1, opener } }
+        }
+        if (block === 'locomotion') {
+          const locomotion = d.block1.locomotion.map((e, i) =>
+            i === index ? { ...e, detail } : e,
+          )
+          return { ...d, block1: { ...d.block1, locomotion } }
+        }
+        if (block === 'sprintPrep') {
+          const sprintPrep = d.block1.sprintPrep.map((e, i) =>
+            i === index ? { ...e, detail } : e,
+          )
+          return { ...d, block1: { ...d.block1, sprintPrep } }
+        }
+        if (block === 'main') {
+          const items = d.block2.items.map((e, i) =>
+            i === index ? { ...e, detail } : e,
+          )
+          return { ...d, block2: { ...d.block2, items } }
+        }
+        const items = d.block3.items.map((e, i) =>
+          i === index ? { ...e, detail } : e,
+        )
+        return { ...d, block3: { ...d.block3, items } }
+      })
+      return { ...s, days }
+    })
   }
 
   function onExport() {
@@ -115,14 +195,35 @@ export default function App() {
   }
 
   const day = state.days[selected]
+  const selectedDate = day?.dateKey ?? state.startDate
+  const styleLabel =
+    state.settings.style === 'hitt'
+      ? 'HITT'
+      : state.settings.style === 'strength'
+        ? 'Strength'
+        : state.settings.style === 'speed'
+          ? 'Speed'
+          : 'Combat'
 
   return (
     <div className="mx-auto min-h-dvh max-w-lg px-3 pb-10 pt-4">
-      <header className="mb-4 text-center">
-        <h1 className="text-3xl font-black tracking-tight">CREW PT</h1>
-        <p className="text-xs font-semibold uppercase text-zinc-500">
-          Phone-first · HITT-ready
-        </p>
+      <header className="mb-4 flex items-start justify-between gap-2">
+        <div className="text-center flex-1">
+          <h1 className="text-3xl font-black tracking-tight">CREW PT</h1>
+          <p className="text-xs font-semibold uppercase text-zinc-500">
+            Phone-first · HITT-ready
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          className="min-h-12 shrink-0 rounded-2xl border border-zinc-600 bg-zinc-900 px-3 text-xs font-black uppercase active:scale-95"
+        >
+          Settings
+          <div className="text-[9px] font-bold normal-case text-zinc-400">
+            {styleLabel} · {state.settings.volume}
+          </div>
+        </button>
       </header>
 
       <div className="space-y-4">
@@ -131,6 +232,12 @@ export default function App() {
           statuses={state.statuses}
           onCycle={cycleStatus}
           onEdit={() => setEditing(true)}
+        />
+
+        <CalendarMonth
+          selectedDate={selectedDate}
+          startDate={state.startDate}
+          onSelectDate={onSelectCalendarDate}
         />
 
         <DayStrip
@@ -148,7 +255,14 @@ export default function App() {
           startDate={state.startDate}
         />
 
-        {day && <DayView day={day} roster={state.roster} />}
+        {day && (
+          <DayView
+            day={day}
+            roster={state.roster}
+            settings={state.settings}
+            onUpdateDetail={onUpdateDetail}
+          />
+        )}
       </div>
 
       {editing && (
@@ -156,6 +270,15 @@ export default function App() {
           roster={state.roster}
           onSave={saveRoster}
           onClose={() => setEditing(false)}
+        />
+      )}
+
+      {settingsOpen && (
+        <SettingsPanel
+          settings={state.settings}
+          onChange={onSettingsChange}
+          onClose={() => setSettingsOpen(false)}
+          onApplyRegenerate={onSettingsApplyRegenerate}
         />
       )}
 

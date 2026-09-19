@@ -25,6 +25,10 @@ Open the local Vite URL (usually `http://localhost:5173`) on your phone or deskt
 - Each day: **HITT Session** + Block1 warm-up (leader) + Block2 main (**PTNCO Stuart**) + Block3 cool-down (leader)
 - **RANDOMIZE** selected day or all 3 — reshuffles packs **without** changing that day’s session type
 - **Advance** start day (Mon–Fri only)
+- **Month calendar** — Mon–Fri with Warrior / Reload / Athlete / Combat labels; tap to select
+- **Exercise demos** — Demo button → cues + YouTube link (`src/data/demos.ts`)
+- **Settings** — style bias, block timing, volume (Easy / Average / Hard), RPE, equipment toggles; applied on Randomize; Export/Import includes settings
+- Inline edit of reps/time after generate
 - **localStorage** persistence + **Export / Import JSON**
 
 ## HITT weekly template
